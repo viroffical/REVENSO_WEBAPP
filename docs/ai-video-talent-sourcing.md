@@ -1345,3 +1345,148 @@ one. Someone who has actually done this work will have an opinion; a reseller wi
 | *"Low model handles face detail, high model picks up hairstyle."* | **Dream Making** | Granular understanding of the two-stage Wan pipeline. |
 | Trained a face/emotion LoRA on **9k 5-frame videos over 65 hours.** | **Juampab12** | Tests whether they have any sense of real training cost and scale. |
 
+---
+
+## 19. The vetting kit
+
+**Provenance note:** this section is synthesis — domain knowledge plus the craft claims verified
+from practitioner communities in §18.1. Tool capabilities move monthly, so treat specific model
+names as "current as of Oct 2026" and expect a good candidate to correct you on at least one.
+**A candidate correcting you is a pass signal, not a fail signal.**
+
+### 19.1 The toolchain a genuinely good operator would name
+
+**Character consistency** — roughly in order of control:
+- **Character sheet first.** Front / profile / three-quarter, neutral expression, consistent lighting, 2+ wardrobes. Everything downstream depends on this existing *before* any generation.
+- **Reference-conditioned image models:** Flux Kontext, Qwen-Image-Edit, Nano Banana (Gemini), Seedream, Midjourney `--cref` / omni-reference, Ideogram character.
+- **Trained character LoRA** (Flux / SDXL / Wan). Beats reference-conditioning when the character recurs across a *lot* of shots, or needs non-frontal angles the references don't cover.
+- **Identity nodes in ComfyUI:** IPAdapter / FaceID (Matteo Spinelli's packs), PuLID, InstantID. Reference-conditioning at the latent level.
+- **Video-model-level:** Kling elements / multi-reference and first+last frame, Veo "Ingredients to Video", Runway Gen-4 references, Wan 2.2 + VACE, Wan 2.2 Animate (character retarget), Seedance omni-reference.
+- **Faceswap as a final pass** (ReActor, Higgsfield Face Swap). **Pros treat this as a crutch**, not a method — useful for rescuing an otherwise-good take, bad as a primary strategy.
+
+**Voice consistency:** ElevenLabs (know the difference between **instant voice clone and
+professional voice clone**, and that *stability* settings trade consistency against
+expressiveness), MiniMax/Hailuo audio, Cartesia, PlayHT, Fish Audio; open-source XTTS, F5-TTS,
+Chatterbox, IndexTTS. Holding one voice across a film means a **fixed voice ID**, consistent
+settings, consistent chunk lengths, and a matched post chain (EQ, room tone).
+
+**Lipsync** — and knowing *which* for *what* is the real skill:
+- **Performance transfer:** Runway Act-Two — you act it, it maps onto the character. Best for genuine emotion.
+- **Talking-head models:** Hedra (Character-3), OmniHuman, Higgsfield Speak. Strong frontal, weak at profile.
+- **Retrofit onto existing footage:** Sync.so (lipsync-2), Wav2Lip, LatentSync, MuseTalk.
+- **Long-form / multi-speaker:** InfiniteTalk, MultiTalk, HuMo, MiniMax H3 (Ref2VA) — **H3 is the current centre of gravity**, per §11.1.
+- **Native dialogue:** Veo 3.x generates audio with the video.
+- **Portrait animation:** LivePortrait, Sonic, EchoMimic, Hallo, MEMO.
+
+**Finishing:** Topaz Astra / Video AI or SeedVR2 (upscale), RIFE or GIMM (interpolation),
+deflicker, colour-match across shots, 24fps conform, sound design and room tone, assembly in
+DaVinci / Premiere / After Effects.
+
+### 19.2 Ten screening questions, with what a good answer sounds like
+
+Unanswerable by someone who only commissions work. **Score each 0-2.**
+
+**1. "Your hero's jacket changes colour between shot 4 and shot 7. Give me three fixes, cheapest first."**
+*Good:* re-roll with the reference re-weighted / fix in the character sheet and regenerate; colour-correct the garment in post with a mask; worst case retrain or re-reference. A real operator **starts with the cheapest fix and mentions post** — a weak one jumps straight to regenerating everything.
+
+**2. "When would you train a LoRA instead of using Kontext or a reference image?"**
+*Good:* when the character recurs across many shots, needs angles the references don't cover, or must hold under varied lighting; the LoRA amortises over a film but is overkill for three shots. **Must mention dataset construction.** Best answer echoes §18.1: *"12 images from one controlled shoot beat 30 random ones."*
+
+**3. "Lipsync drifts after about 12 seconds. Why, and what do you do?"**
+*Good:* accumulated audio-visual timing error, chunking boundaries, or model context limits. Fixes: shorter segments with measured offsets, a model built for long form (InfiniteTalk / H3 chaining), or **cut away and come back** — editorial, not technical. **The "cut away" answer is the strongest one**, because it's a directing instinct.
+
+**4. "Which lipsync model for a 20-second close-up with two speakers, and what breaks first?"**
+*Good:* names a specific model *and* a specific failure mode — jaw-only motion, teeth morphing, the mouth-region blur box, plosive closure on b/p/m. **Anyone who says "whatever's best right now" has not done this.**
+
+**5. "How do you keep one voice identical across a whole film?"**
+*Good:* fixed voice ID, locked stability settings, consistent chunk length, same post chain. Bonus: knows instant vs professional cloning and when to pay for which.
+
+**6. "What's your selects ratio, and what does a minute of finished film cost you in credits?"**
+*Good:* a real number — 6:1 to 10:1 generated-to-kept is normal, with a credit figure attached. **Anyone who claims 2:1 is lying or has never finished anything.** Operators track this because they pay for it.
+
+**7. "Shot 3 is lit from the left, shot 4 from the right, and they're meant to be the same moment. How did that happen and how do you prevent it?"**
+*Good:* different seeds/prompts without a locked lighting description; prevent it with an explicit lighting spec in the character sheet and the prompt template, or by generating a key frame per setup first. **This is the continuity question and it separates people with craft from people with tools.**
+
+**8. "Show me a shot you couldn't make work, and tell me why."**
+*Good:* an actual specific failure with a diagnosis. **Per §11.6: a documented failure outranks a polished showcase every time.** Someone who claims nothing ever failed is a reseller.
+
+**9. "Where would you *not* use AI on this film?"**
+*Good:* close-up dialogue beats, hands, complex physical interaction, anything requiring exact brand/product fidelity, text in frame. **A good operator has a clear map of the medium's limits and designs around them.**
+
+**10. "What changed in the last two months that you've adopted?"**
+*Good:* a specific recent model or technique with an opinion about it. **The field turns over every ~8 weeks** — someone current will have something to say; someone coasting on a 2025 workflow won't.
+
+**Scoring:** 0-7 = reject. 8-13 = interview. 14-20 = move fast.
+
+### 19.3 Portfolio red flags
+
+- **Every shot is 5 seconds.** Means no shot was ever hard, and nothing was carried across cuts.
+- **No dialogue anywhere.** The single biggest tell. Dialogue is where AI video breaks, so avoiding it entirely means avoiding the skill you're buying.
+- **No recurring character.** Beautiful one-off shots prove prompt taste, not consistency.
+- **Wall-to-wall music, no sound design.** Hides the absence of dialogue and room tone.
+- **Only landscape / b-roll / abstract.** No faces means no identity problem to solve.
+- **Everything has the same tool's default look.** One model, default settings, no pipeline.
+- **No behind-the-scenes, ever.** Nothing but finished output is the signature of someone who commissions rather than makes.
+- **A glossy grid with a "DM for collabs" bio.** You already know what that is.
+
+### 19.4 Portfolio green flags
+
+- **The same character recognisably across 10+ shots and multiple angles**, including a profile turn.
+- **30s+ of synced dialogue**, ideally **two characters in conversation in the same frame.**
+- **One voice that holds** across a whole piece.
+- **Workflow / BTS posts, node graphs, before-and-afters.**
+- **A written or video post-mortem** naming tools, failures and fixes.
+- **A second piece with the same character or process** — one good film can be luck; two proves process.
+- **Published assets** — a LoRA, a workflow, a Patreon others pay for.
+- **Posted failures.** *"Attempt 47, still getting drift on the profile turn"* is the strongest single signal available.
+
+### 19.5 The 30-minute live screen-share (do not skip this)
+
+Everything above can be faked by a good salesperson with an outsourced portfolio. **This cannot.**
+
+1. **(5 min)** They share their screen and open their actual working environment. You're looking at whether it's set up like someone's daily tool or opened for the first time today.
+2. **(15 min)** **Reproduce one shot from their own submitted film, live, while you watch.** Not a new shot — one of *theirs*. A reseller cannot do this at all.
+3. **(5 min)** Hand them a curveball: *"now make her turn her head to profile and keep the face."* Watch how they reason, not whether they succeed.
+4. **(5 min)** Ask them to walk you through their character sheet and explain one choice in it.
+
+**Pass condition:** they move fluently, they know where their own files are, they narrate trade-offs
+unprompted, and when it goes wrong they diagnose rather than re-roll blindly.
+
+### 19.6 Paid test brief — the full spec
+
+**Rs 15,000 / US$180 · 7 days · paid on delivery regardless of outcome.**
+
+> **You supply:** one character reference image, three lines of dialogue, one required prop or
+> product that must stay identical throughout.
+>
+> **Deliver a 45-60 second film containing:**
+> - That character, recurring across **at least 6 shots**
+> - **Three different lighting setups** across **two locations**
+> - **~20 seconds of dialogue with lipsync**, at least one line in **close-up**
+> - A **second character in the same frame** as the first in at least one shot
+> - The supplied prop, visually identical in every shot it appears in
+> - 1080p+, 24fps, graded, with sound design and room tone
+>
+> **Submit alongside it — submissions missing any of these five are discarded:**
+> 1. The **character sheet** you built from the reference
+> 2. Your **consistency method**, named explicitly, and why you chose it over the alternatives
+> 3. **Three rejected takes** with one line each on why they failed
+> 4. Your **selects ratio** (generated : kept)
+> 5. Total **credit spend**
+
+**The traps, and what each one tests:**
+
+| Trap | Tests |
+|---|---|
+| 3 lighting setups across 2 locations | Shot continuity — the old craft that can't be prompted |
+| Close-up dialogue line | Lipsync at the hardest possible framing |
+| Two characters in one frame | Multi-subject identity, where most pipelines collapse |
+| A required identical prop | Object permanence, which is harder than face consistency and almost nobody tests for it |
+| Three rejected takes | Honesty, and whether they can diagnose their own failures |
+| Selects ratio + credit spend | Whether they've ever actually paid for this work |
+
+**Use the §7 rubric to score.** Pass = identity holds through the profile turn, the close-up
+lipsync survives a pause-and-scrub, the voice doesn't shift between lines, and the prop is the
+same prop. **Anyone who clears all four is worth hiring immediately at above market rate**, because
+on this research's evidence there are very few of them and several funded startups are looking.
+
