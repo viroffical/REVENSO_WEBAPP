@@ -994,7 +994,7 @@ Use these instead of marketing language, everywhere:
 `latentsync` · `musetalk` · `echomimic` · `sonic` · `hallo` · `wav2lip` · `act two` · `act-two` ·
 `wan animate` · `omnihuman` · `live portrait` · `veo3 ingredients` · `first frame last frame` ·
 `flf2v` · `i2v` · `kling elements` · `character sheet` · `turnaround sheet` · `model sheet` ·
-`consistent character` · `identity drift` · `cref` · `sref` · `pulid` · `instantid` · `reactor` ·
+`consistent character` · `identity drift` · `oref` · `omni-reference` · `ow` · `sref` · `pulid` · `instantid` · `reactor` ·
 `voice clone` · `elevenlabs v3` · `f5-tts` · `index-tts` · `chatterbox` · `topaz astra` ·
 `seedvr2` · `rife` · `gimm` · `deflicker` · `selects ratio` · `lipsync pass` · `upscale pass`
 
@@ -1358,7 +1358,7 @@ names as "current as of Oct 2026" and expect a good candidate to correct you on 
 
 **Character consistency** — roughly in order of control:
 - **Character sheet first.** Front / profile / three-quarter, neutral expression, consistent lighting, 2+ wardrobes. Everything downstream depends on this existing *before* any generation.
-- **Reference-conditioned image models:** Flux Kontext, Qwen-Image-Edit, Nano Banana (Gemini), Seedream, Midjourney `--cref` / omni-reference, Ideogram character.
+- **Reference-conditioned image models:** Flux Kontext, Qwen-Image-Edit-2509, Nano Banana Pro (Gemini), Seedream, Midjourney `--oref` + `--ow`, Ideogram character. **NOTE: `--cref` is gone in Midjourney v7** — see §19.7.
 - **Trained character LoRA** (Flux / SDXL / Wan). Beats reference-conditioning when the character recurs across a *lot* of shots, or needs non-frontal angles the references don't cover.
 - **Identity nodes in ComfyUI:** IPAdapter / FaceID (Matteo Spinelli's packs), PuLID, InstantID. Reference-conditioning at the latent level.
 - **Video-model-level:** Kling elements / multi-reference and first+last frame, Veo "Ingredients to Video", Runway Gen-4 references, Wan 2.2 + VACE, Wan 2.2 Animate (character retarget), Seedance omni-reference.
@@ -1490,3 +1490,63 @@ lipsync survives a pause-and-scrub, the voice doesn't shift between lines, and t
 same prop. **Anyone who clears all four is worth hiring immediately at above market rate**, because
 on this research's evidence there are very few of them and several funded startups are looking.
 
+
+### 19.7 Three corrections and one India-specific finding
+
+These came in last and each one is live, specific and sourced. **The first fixes an error that was
+in an earlier draft of this document.**
+
+**1. `--cref` no longer exists. Midjourney v7 uses `--oref` + `--ow`.**
+Omni-reference replaced it and covers characters, objects and creatures, not just faces.
+`--ow` runs 1-1000, default 100: **~25-50 to let style change, 200-400 to lock hard** — but a high
+`--ow` **fights the prompt and gives a pasted-in look that resists re-posing and re-lighting.**
+
+The honest assessment: Midjourney is the **best *look*, worst *pipeline*** tool — no official API,
+weak surgical editing, and **`--oref` holds family resemblance rather than "same actor."**
+`--sref`/`--sw` is a separate *style* axis; `--p` profiles are house style, **not character.**
+
+**-> Use this as a screening question: "What replaced `--cref` in Midjourney v7?"** Anyone still
+saying `--cref` has not generated a character reference in months. Correct answer: `--oref`
+omni-reference, with `--ow`.
+Source: https://prompt-faqs.notion.site/Parameter-oref-Omni-Reference-V7-299024c0a17e81d38080c028f44894cb
+
+**2. The "lipsync drifts after 12 seconds" symptom is usually not the lipsync model at all.**
+**23.976 vs 24.000 fps drifts audio by ~3.6 frames per minute, which is *exactly* that symptom.**
+A 24-vs-25 mismatch is ~0.5s at 12 seconds — again, exactly it.
+
+**Check frame-rate mismatch before blaming the model.** Verify audio and video have the same
+duration **in frames** at the declared rate. Fix by conforming properly, not by letting the NLE
+resample. **Transcode variable-frame-rate sources to CFR before anything else.**
+
+Specifics worth knowing: retime 30->24 by interpolation or by generating at 24, **never** by letting
+the NLE drop frames. **For Wan's 16fps, interpolate to 48 and then drop to 24**, rather than 16->24
+directly — non-integer ratio, ghosting.
+
+**-> This upgrades screening question #3 in §19.2.** A good operator's *first* answer should be
+"what frame rates are the audio and video?" If they jump straight to swapping lipsync models,
+they've been treating a symptom.
+
+**3. For Hindi, ElevenLabs is probably not your best option — and this is the most India-relevant
+technical finding in this whole document.**
+
+**Sarvam AI's Bulbul** covers ten Indian languages (Hindi, Tamil, Telugu, Malayalam, Kannada,
+Bengali, Marathi, Punjabi, Gujarati, Assamese). On Indic TTS benchmarking it was the closest
+challenger to ElevenLabs on raw naturalness **while beating it outright on Hindi prosody,
+retroflex consonants, and Indian-style number reading** — **lakh and crore, and phone numbers read
+digit by digit.**
+
+That last point is the single most useful fact here for a Hindi project, because **Indian numerals
+and units are exactly where global TTS embarrasses itself.**
+
+**-> Action:** A/B **Sarvam Bulbul against ElevenLabs v3** for any native Hindi delivery, and
+**pre-normalise numerals and code-switched words either way.**
+**-> And as a screening question:** ask what they'd use for a Hindi voiceover with rupee amounts in
+it. Someone who names an Indic-specific model, or who volunteers that numerals need
+pre-normalising, has actually shipped Hindi audio.
+Sources: https://en.wikipedia.org/wiki/Sarvam_AI · https://caller.digital/blog/elevenlabs-alternatives-india-2026
+
+**Flagged low-confidence** (vendor domains were egress-blocked, so these come from secondary
+coverage): Seedream 4.5 / Seedance 2.5 specs, Kling 3.0's launch date (sources disagree:
+Feb vs Mar 2026), Higgsfield's current lineup, per-second API pricing, Veo 3.1's three-reference
+limit, Nano Banana Pro's 14-reference/5-person/4K specs, and Wan 2.5 being API-only.
+**Verify anything you'll make a purchasing decision on.**
